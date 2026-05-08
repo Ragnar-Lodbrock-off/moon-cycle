@@ -14,25 +14,14 @@
             <p>Фаза луны: <span id="moon-phase"></span></p>
         </div>
 
-        <div class="cycle-selector">
-            <h2>Отметьте фазу цикла</h2>
-            <select id="cycle-phase">
-                <option value="menstruation">Менструация</option>
-                <option value="follicular">Фолликулярная фаза</option>
-                <option value="ovulation">Овуляция</option>
-                <option value="luteal">Лютеиновая фаза</option>
-            </select>
-            <button onclick="addCycleDay()">Отметить день</button>
-        </div>
-
         <div class="calendar">
             <h2>Круговой календарь (28 дней)</h2>
-            <div id="cycle-chart" style="width: 300px; height: 300px;"></div>
+            <div id="interactive-chart" style="width: 300px; height: 300px;"></div>
         </div>
 
-        <div class="interactive-calendar">
-            <h2>Интерактивный календарь (клик по дню)</h2>
-            <div id="interactive-chart" style="width: 300px; height: 300px;"></div>
+        <div class="summary">
+            <h2>Сводная диаграмма фаз</h2>
+            <div id="summary-chart" style="width: 300px; height: 300px;"></div>
         </div>
     </div>
 
