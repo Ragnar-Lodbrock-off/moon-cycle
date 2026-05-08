@@ -1,0 +1,28 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+h1, h2 {
+    text-align: center;
+}
+.info, .cycle-selector {
+    margin-bottom: 20px;
+}
+.cycle-selector select, button {
+    padding: 8px;
+    margin-right: 10px;
+}
+.calendar {
+    text-align: center;
+}
