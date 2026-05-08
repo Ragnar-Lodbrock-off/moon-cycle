@@ -8,6 +8,7 @@
 </head>
 <body>
     <script src="script.js"></script>
+    
     <div class="container">
         <h1>Лунный и менструальный календарь</h1>
         
@@ -29,7 +30,56 @@
                 </canvas>
             </div>
         </div>
+    <canvas id="cycleChart" width="600" height="400"></canvas>
 
+    <script>
+        const ctx = document.getElementById('cycleChart').getContext('2d');
+        const cycleChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    'Менструация',
+                    'Фолликулярная фаза',
+                    'Овуляция',
+                    'Лютеиновая фаза'
+                ],
+                datasets: [{
+                    data: [5, 10, 2, 12], // примерные значения (дни)
+                    backgroundColor: [
+                        '#e74c3c', // Менструация
+                        '#3498db', // Фолликулярная
+                        '#f1c40f', // Овуляция
+                        '#2ecc71'  // Лютеиновая
+                    ],
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                let value = context.raw || 0;
+                                return `${label}: ${value} дней`;
+                            }
+                        }
+                    }
+                },
+                onClick: function(evt, item) {
+                    if (item.length) {
+                        const phase = this.data.labels[item[0].index];
+                        const value = this.data.datasets[0].data[item[0].index];
+                        alert(`Фаза: ${phase}\nПродолжительность: ${value} дней`);
+                    }
+                }
+            }
+        });
+    </script>
         <div class="phase-selector">
             <h3>Отметить фазу для выбранного дня:</h3>
             <select id="phase-select">
