@@ -1,35 +1,31 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лунный и менструальный календарь</title>
+    <title>Лунный и женский календарь</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-       
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
     <div class="container">
-        <h1>Лунный и менструальный календарь</h1>
-        <script src="script.js"></script>
-        <div class="info-panel">
-            <div id="current-date"></div>
-            <div id="moon-phase"></div>
-            <div id="lunar-day"></div>
+        <h1>Лунный и женский календарь</h1>
+        
+        <div class="info">
+            <p>Текущий месяц: <span id="current-month"></span></p>
+            <p>Фаза луны: <span id="moon-phase"></span></p>
+            <p>День лунного календаря: <span id="lunar-day"></span></p>
         </div>
 
-        <div class="calendar-container">
-            <h2>Круговой лунный календарь (28 дней)</h2>
-            <canvas id="circular-calendar" width="400" height="400"> 
-                        
-            <div class="legend">
-                <div><span class="legend-color" style="background-color: #ff6b6b;"></span> Менструация</div>
-                <div><span class="legend-color" style="background-color: #4ecdc4;"></span> Фолликулярная фаза</div>
-                <div><span class="legend-color" style="background-color: #45b7d1;"></span> Овуляция</div>
-                <div><span class="legend-color" style="background-color: #96ceb4;"></span> Лютеиновая фаза</div>
-                </canvas>
-            </div>
+        <div class="calendar">
+            <h2>Круговой календарь (28 дней)</h2>
+            <div id="interactive-chart" style="width: 300px; height: 300px;"></div>
         </div>
-    <canvas id="cycleChart" width="600" height="400"></canvas>
+
+        <div class="summary">
+            <h2>Сводная диаграмма фаз</h2>
+            <div id="summary-chart" style="width: 300px; height: 300px;"></div>
+               <canvas id="cycleChart" width="600" height="400"></canvas>
 
     <script>
         const ctx = document.getElementById('cycleChart').getContext('2d');
@@ -79,16 +75,8 @@
             }
         });
     </script>
-        <div class="phase-selector">
-            <h3>Отметить фазу для выбранного дня:</h3>
-            <select id="phase-select">
-                <option value="menstruation">Менструация</option>
-                <option value="follicular">Фолликулярная фаза</option>
-                <option value="ovulation">Овуляция</option>
-                <option value="luteal">Лютеиновая фаза</option>
-            </select>
-            <button id="save-phase">Сохранить</button>
         </div>
     </div>
+
 </body>
 </html>
