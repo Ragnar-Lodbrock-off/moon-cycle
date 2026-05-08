@@ -115,7 +115,75 @@ function updateInteractiveCalendar() {
             animation: { animateRotate: false }
         }
     });
+// Функция для безопасного удаления старой диаграммы
+function destroyChartIfExists(chartRef) {
+    if (chartRef) {
+        chartRef.destroy();
+    }
+}
 
+// Функция обновления круговой диаграммы цикла
+function updateCycleChart() {
+    const ctx = document.getElementById('cycle-chart').getContext('2d');
+    
+    const counts = { menstruation: 0, follicular: 0, ovulation: 0, luteal: 0 };
+    cycleDays.forEach(day => {
+        if (day) counts[day]++;
+    });
+    
+    const data = {
+        labels: Object.keys(counts),
+        datasets: [{
+            data: Object.values(counts),
+            backgroundColor: Object.keys(counts).map(key => phaseColors[key]),
+            hoverOffset: 4
+        }]
+    };
+    
+    // Безопасно удаляем старую диаграмму
+    destroyChartIfExists(window.myChart);
+    
+    window.myChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // Важно для фиксированной высоты
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+}
+
+// Функция обновления интерактивного календаря (круг из 28 дней)
+function updateInteractiveCalendar() {
+    const ctx = document.getElementById('interactive-chart').getContext('2d');
+    
+    // Безопасно удаляем старую диаграмму
+    destroyChartIfExists(window.interactiveChart);
+
+    const labels = Array.from({length: 28}, (_, i) => i + 1);
+    
+    window.interactiveChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: Array(28).fill(1),
+                backgroundColor: cycleDays.map(day => phaseColors[day] || phaseColors.none),
+                borderWidth: 1,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // Важно для фиксированной высоты
+            plugins: { legend: { display: false } },
+            rotation: -Math.PI / 2,
+            circumference: Math.PI * 2,
+            animation: { animateRotate: false }
+        }
+    });
+}
     // Добавляем обработчик клика по секторам
     ctx.canvas.addEventListener('click', function(evt) {
         const activePoints = window.interactiveChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
