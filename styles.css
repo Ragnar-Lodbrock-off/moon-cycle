@@ -1,31 +1,36 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+.container {
+    max-width: 700px;
+    margin: 0 auto;
+    background-color: #ffffff;
+    padding: 25px 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+h1, h2 {
+    text-align: center;
+    color: #2c3e50;
+}
+h1 {
+    font-size: 2.5rem;
+}
+.info {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.info p {
+    font-size: 1.1rem;
+}
+.calendar, .summary {
+    margin-bottom: 45px;
     text-align: center;
 }
-
-.container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-#calendar {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-}
-
-.day {
-    padding: 10px;
-    border: 1px solid #ccc;
-    cursor: pointer;
-}
-
-.selected {
-    background-color: #007bff;
-    color: white;
+canvas {
+    cursor: pointer; /* Показываем, что график кликабельный */
 }
