@@ -1,83 +1,74 @@
-const phases = ['Менструация', 'Фолликулярная фаза', 'Овуляция', 'Лютеиновая фаза'];
-const phaseColors = ['#ff9999', '#99ff99', '#ffff99', '#ffcc99'];
-
-function getCurrentDate() {
-    const date = new Date();
-    return date;
-}
-
-function drawMoonPhase(date) {
-    const canvas = document.getElementById('moon-phase-canvas');
-    const ctx = canvas.getContext('2d');
-    
-    const moonPhase = calculateMoonPhase(date);
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    ctx.beginPath();
-    ctx.arc(150, 150, 100, 0, Math.PI * 2);
-    
-    if (moonPhase < 0.5) {
-        ctx.fillStyle = 'lightgray';
-        ctx.fill();
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.arc(150, 150, 100, Math.PI * 2 * moonPhase, Math.PI * 2);
-        ctx.fill();
-    } else {
-        ctx.fillStyle = 'lightgray';
-        ctx.fill();
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.arc(150, 150, 100, Math.PI * 2 * moonPhase, Math.PI * 2);
-        ctx.fill();
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = 'black';
-        ctx.beginPath();
-        ctx.arc(150, 150, 100, Math.PI * 2 * (moonPhase - 1), Math.PI * 2);
-        ctx.fill();
-    }
-    
-    ctx.globalCompositeOperation = 'source-over';
-}
-
-function calculateMoonPhase(date) {
-    const knownNewMoon = new Date('2023-01-21T00:00:00Z'); // Задайте известную дату новолуния
-    const lunarCycle = 29.53; // Средняя длина лунного цикла в днях
-    const diffInDays = (date - knownNewMoon) / (1000 * 60 * 60 * 24);
-    
-    return (diffInDays % lunarCycle) / lunarCycle;
-}
-
-function createCalendar() {
-    const calendar = document.getElementById('calendar');
-    
-    for (let i = 1; i <= 28; i++) {
-        const dayDiv = document.createElement('div');
-        dayDiv.classList.add('day');
-        dayDiv.innerText = i;
+class LunarMenstrualCalendar {
+    constructor() {
+        this.canvas = document.getElementById('circular-calendar');
+        this.ctx = this.canvas.getContext('2d');
+        this.phaseSelect = document.getElementById('phase-select');
+        this.saveButton = document.getElementById('save-phase');
         
-        dayDiv.addEventListener('click', () => {
-            const phase = prompt(Выберите фазу для дня ${i}:\n${phases.join(', ')});
-            if (phases.includes(phase)) {
-                dayDiv.style.backgroundColor = phaseColors[phases.indexOf(phase)];
-                dayDiv.dataset.phase = phase;
-            } else {
-                alert('Неверная фаза!');
-            }
-        });
+        // Данные о фазах менструального цикла
+        this.cycleData = JSON.parse(localStorage.getItem('cycleData')) || {};
         
-        calendar.appendChild(dayDiv);
+        this.init();
     }
-}
 
-function displayCurrentDate() {
-    const currentDate = getCurrentDate();
-    document.getElementById('current-date').innerText = Сегодня: ${currentDate.toLocaleDateString()};
-}
+    init() {
+        this.updateCurrentInfo();
+        this.drawCircularCalendar();
+        this.setupEventListeners();
+    }
 
-function init() {
-    displayCurrentDate();
-    drawMoonPhase(getCurrentDate());
-    createCalendar();
-}
+    updateCurrentInfo() {
+        const now = new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('current-date').textContent = 
+            `Текущая дата: ${now.toLocaleDateString('ru-RU', options)}`;
 
-init();
+        // Расчёт лунной фазы
+        const lunarDay = this.calculateLunarDay(now);
+        const moonPhase = this.getMoonPhaseName(lunarDay);
+        
+        document.getElementById('moon-phase').textContent = `Фаза луны: ${moonPhase}`;
+        document.getElementById('lunar-day').textContent = `День лунного календаря: ${lunarDay}`;
+    }
+
+    // Точный расчёт дня лунного цикла (29.53 дня)
+    calculateLunarDay(date) {
+        // Базовая дата — новолуние 6 января 2000 года
+        const baseDate = new Date('2000-01-06T00:00:00');
+        const lunarCycle = 29.530588853; // дней
+        
+        const diff = date - baseDate;
+        const days = diff / (1000 * 60 * 60 * 24);
+        const lunarDay = (days % lunarCycle) + 1;
+        
+        return Math.floor(lunarDay);
+    }
+
+    getMoonPhaseName(day) {
+        if (day === 1) return 'Новолуние';
+        else if (day <= 7) return 'Растущая луна (первая четверть)';
+        else if (day <= 14) return 'Растущая луна (вторая четверть)';
+        else if (day === 15) return 'Полнолуние';
+        else if (day <= 22) return 'Убывающая луна (третья четверть)';
+        else if (day <= 29) return 'Убывающая луна (четвёртая четверть)';
+        else return 'Новолуние (приближается)';
+    }
+
+    drawCircularCalendar() {
+        const centerX = this.canvas.width / 2;
+        const centerY = this.canvas.height / 2;
+        const radius = 180;
+        const startAngle = -Math.PI / 2; // Начинаем сверху
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        for (let i = 0; i < 28; i++) {
+            const angle = startAngle + (i * 2 * Math.PI / 28);
+            const endAngle = angle + (2 * Math.PI / 28);
+
+            // Определяем цвет для дня
+            const dateKey = this.getDateKey(i + 1);
+            let color = '#f0f0f0'; // Цвет по умолчанию
+
+            if (this.cycleData[dateKey]) {
+                color = this.getPhaseColor(this.
