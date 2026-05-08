@@ -30,3 +30,8 @@ h1, h2 {
 .interactive-calendar canvas {
     cursor: pointer;
 }
+.calendar canvas,
+.interactive-calendar canvas {
+    width: 100% !important; /* Растягиваем по ширине родителя */
+    height: 300px !important; /* Явно задаём высоту, чтобы Canvas не схлопывался */
+}
