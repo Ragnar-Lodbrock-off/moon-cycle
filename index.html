@@ -2,30 +2,44 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Лунный и женский календарь</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лунный и менструальный календарь</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Лунный и женский календарь</h1>
+        <h1>Лунный и менструальный календарь</h1>
         
-        <div class="info">
-            <p>Текущий месяц: <span id="current-month"></span></p>
-            <p>Фаза луны: <span id="moon-phase"></span></p>
-            <p>День лунного календаря: <span id="lunar-day"></span></p>
+        <div class="info-panel">
+            <div id="current-date"></div>
+            <div id="moon-phase"></div>
+            <div id="lunar-day"></div>
         </div>
 
-        <div class="calendar">
-            <h2>Круговой календарь (28 дней)</h2>
-            <div id="interactive-chart" style="width: 300px; height: 300px;"></div>
+        <div class="calendar-container">
+            <h2>Круговой лунный календарь (28 дней)</h2>
+            <canvas id="circular-calendar" width="400" height="400"></canvas>
+            
+            <div class="legend">
+                <div><span class="legend-color" style="background-color: #ff6b6b;"></span> Менструация</div>
+                <div><span class="legend-color" style="background-color: #4ecdc4;"></span> Фолликулярная фаза</div>
+                <div><span class="legend-color" style="background-color: #45b7d1;"></span> Овуляция</div>
+                <div><span class="legend-color" style="background-color: #96ceb4;"></span> Лютеиновая фаза</div>
+            </div>
         </div>
 
-        <div class="summary">
-            <h2>Сводная диаграмма фаз</h2>
-            <div id="summary-chart" style="width: 300px; height: 300px;"></div>
+        <div class="phase-selector">
+            <h3>Отметить фазу для выбранного дня:</h3>
+            <select id="phase-select">
+                <option value="menstruation">Менструация</option>
+                <option value="follicular">Фолликулярная фаза</option>
+                <option value="ovulation">Овуляция</option>
+                <option value="luteal">Лютеиновая фаза</option>
+                <option value="none">Нет фазы</option>
+            </select>
+            <button id="save-phase">Сохранить</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
