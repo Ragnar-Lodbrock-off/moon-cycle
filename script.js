@@ -1,4 +1,4 @@
-// --- НАСТРОЙКИ И КОНСТАНТЫ ---
+// --- НАСТРОЙКИ ---
 const PHASES = {
     menstruation: { name: 'Менструация', color: '#e74c3c' },
     follicular:   { name: 'Фолликулярная', color: '#3498db' },
@@ -7,21 +7,19 @@ const PHASES = {
 };
 const CYCLE_DAYS = 28; // Длительность цикла в днях
 
-// --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
+// --- СОСТОЯНИЕ ---
 let cycleDays = new Array(CYCLE_DAYS).fill(null); // Массив фаз для каждого дня (0-27)
 let interactiveChart = null;
 let summaryChart = null;
 
 // --- ФУНКЦИИ РАБОТЫ С ЛУНОЙ ---
 function getMoonPhase(date) {
-    // Алгоритм расчета лунной фазы (упрощенная модель)
     const synodicMonth = 29.53058867;
-    const baseDate = new Date(2001, 0, 6, 18, 14); // Эталонное новолуние
+    const baseDate = new Date(2001, 0, 6, 18, 14);
 
     const diff = date - baseDate;
     const age = (diff / (1000 * 60 * 60 * 24)) % synodicMonth;
 
-    if (age < 1) return 'Новолуние';
     if (age < synodicMonth / 8) return 'Растущий серп';
     if (age < synodicMonth / 4) return 'Первая четверть';
     if (age < synodicMonth / 2) return 'Растущая луна';
@@ -40,54 +38,16 @@ function updateMoonInfo() {
     
     document.getElementById('current-month').textContent = months[now.getMonth()];
     
-    // Находим ближайший день цикла к текущей дате
-    const todayIndex = now.getDate() % CYCLE_DAYS - 1;
-    
-    // Если сегодня отмечен в цикле, показываем его фазу
-    const currentPhase = cycleDays[todayIndex];
-    
-    let moonText = getMoonPhase(now);
-    
-    if (currentPhase) {
-        moonText += `\n(Сегодня день ${todayIndex + 1} цикла — ${PHASES[currentPhase].name})`;
-        document.getElementById('moon-phase').style.color = PHASES[currentPhase].color;
-        document.getElementById('moon-phase').style.fontWeight = 'bold';
-        document.getElementById('moon-phase').style.fontSize = '1.2rem';
-        document.getElementById('moon-phase').style.lineHeight = '1.4';
-        document.getElementById('moon-phase').style.whiteSpace = 'pre-wrap';
-        document.getElementById('moon-phase').style.textAlign = 'center';
-        document.getElementById('moon-phase').style.display = 'block'; // Для переноса строк
-        document.getElementById('moon-phase').style.width = '100%';
-        
-        // Прокручиваем к календарю, если это первый запуск и есть отметка на сегодня
-        if (!window.hasScrolledToCalendar && todayIndex >= 0 && currentPhase) {
-            window.hasScrolledToCalendar = true;
-            document.querySelector('.calendar').scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        // Прокручиваем к сводной диаграмме, если есть данные
-        if (!window.hasScrolledToSummary && Object.values(cycleDays).filter(v => v).length > 5) {
-            window.hasScrolledToSummary = true;
-            document.querySelector('.summary').scrollIntoView({ behavior: 'smooth' });
-        }
-        
-        
-        
+    // День лунного календаря (относительно новолуния)
+    const baseDate = new Date(2001, 0, 6);
+    const diffDays = Math.floor((now - baseDate) / (1000 * 60 * 60 * 24));
+    const lunarDay = ((diffDays % CYCLE_DAYS) + CYCLE_DAYS) % CYCLE_DAYS + 1; // Приводим к диапазону 1-28
 
-} else {
-        document.getElementById('moon-phase').style.color = '#333';
-        document.getElementById('moon-phase').style.fontWeight = 'normal';
-        document.getElementById('moon-phase').style.fontSize = '';
-        document.getElementById('moon-phase').style.lineHeight = '';
-        document.getElementById('moon-phase').style.whiteSpace = '';
-        document.getElementById('moon-phase').style.textAlign = '';
-        document.getElementById('moon-phase').style.display = '';
-        document.getElementById('moon-phase').style.width = '';
-     }
-
-     document.getElementById('moon-phase').textContent = moonText;
+    document.getElementById('lunar-day').textContent = lunarDay;
+    
+    // Фаза луны
+    document.getElementById('moon-phase').textContent = getMoonPhase(now);
 }
-
 
 // --- ФУНКЦИИ ГРАФИКОВ ---
 function destroyChart(chartRef) {
@@ -171,33 +131,20 @@ function updateInteractiveCalendar() {
                 border-radius:15px;
                 box-shadow:0 15px 40px rgba(0,0,0,0.3);
                 z-index:9999;
-                width:300px;"
-            >
-                <h3 style="margin-top:-15px; margin-bottom:-15px; font-size:1.6rem;">День ${dayIndex + 1}</h3>
+                width:${window.innerWidth > 550 ? '350px' : '95vw'};
+            ">
+                <h3 style="margin-top:-15px; margin-bottom:-15px; font-size:${window.innerWidth > 550 ? '1.6rem' : '1.4rem'};">День ${dayIndex + 1}</h3>
                 <p style="font-size:.9rem; color:#777;">Выберите текущую фазу:</p>
                 
-                <button onclick="setPhase( ${dayIndex}, 'menstruation')" 
-                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.menstruation.color}; color:#fff; font-weight:bolder; cursor:pointer;">
-                    ${PHASES.menstruation.name}
-                </button>
-                
-                <button onclick="setPhase( ${dayIndex}, 'follicular')" 
-                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.follicular.color}; color:#fff; font-weight:bolder; cursor:pointer;">
-                    ${PHASES.follicular.name}
-                </button>
-                
-                <button onclick="setPhase( ${dayIndex}, 'ovulation')" 
-                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.ovulation.color}; color:#fff; font-weight:bolder; cursor:pointer;">
-                    ${PHASES.ovulation.name}
-                </button>
-                
-                <button onclick="setPhase( ${dayIndex}, 'luteal')" 
-                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.luteal.color}; color:#fff; font-weight:bolder; cursor:pointer;">
-                    ${PHASES.luteal.name}
-                </button>
+                ${Object.keys(PHASES).map(key => `
+                    <button onclick="setPhase( ${dayIndex}, '${key}')" 
+                            style="width:${window.innerWidth > 550 ? 'calc(50% - .7rem)' : '100%'}; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES[key].color}; color:#fff; font-weight:bolder; cursor:pointer;">
+                        ${PHASES[key].name}
+                    </button>
+                `).join('')}
                 
                 <button onclick="setPhase( ${dayIndex}, null)" 
-                        style="width:100%; padding:.8rem; border:none; border-radius:.5rem; background:#ccc; color:#fff; font-weight:bolder; cursor:pointer;">Сбросить</button>
+                        style="width:${window.innerWidth > 550 ? 'calc(50% - .7rem)' : '100%'}; padding:.8rem; border:none; border-radius:.5rem; background:#ccc; color:#fff; font-weight:bolder; cursor:pointer;">Сбросить</button>
                 
             </div>`;
            
@@ -227,7 +174,7 @@ function setPhase(dayIndex, phase) {
    updateInteractiveCalendar();
    updateSummaryChart();
    
-   // Убираем меню выбора фазы (оно вставляется в updateInteractiveCalendar)
+   // Убираем меню выбора фазы
    const menu = document.getElementById("phase-menu");
    if (menu) menu.remove();
    
@@ -254,11 +201,7 @@ window.onload = function() {
          }
       }, 5);
       
-      
-      
-      
-  
-} else {
+   } else {
       // Если данных нет, просто обновляем луну и создаем пустые графики
       updateMoonInfo();
       updateInteractiveCalendar();
