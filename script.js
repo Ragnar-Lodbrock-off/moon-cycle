@@ -1,252 +1,267 @@
-// Массив для хранения фаз цикла по дням (1-28)
-let cycleDays = new Array(28).fill(null);
-
-// Цвета для фаз
-const phaseColors = {
-    menstruation: '#e74c3c',
-    follicular: '#3498db',
-    ovulation: '#f1c40f',
-    luteal: '#2ecc71',
-    none: '#ddd'
+// --- НАСТРОЙКИ И КОНСТАНТЫ ---
+const PHASES = {
+    menstruation: { name: 'Менструация', color: '#e74c3c' },
+    follicular:   { name: 'Фолликулярная', color: '#3498db' },
+    ovulation:    { name: 'Овуляция', color: '#f1c40f' },
+    luteal:       { name: 'Лютеиновая', color: '#2ecc71' },
 };
+const CYCLE_DAYS = 28; // Длительность цикла в днях
 
-// Точный расчёт лунной фазы (по алгоритму Jean Meeus)
+// --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
+let cycleDays = new Array(CYCLE_DAYS).fill(null); // Массив фаз для каждого дня (0-27)
+let interactiveChart = null;
+let summaryChart = null;
+
+// --- ФУНКЦИИ РАБОТЫ С ЛУНОЙ ---
 function getMoonPhase(date) {
-    const synodicMonth = 29.53058867; // дней
-    const baseDate = new Date(2001, 0, 6, 18, 14); // Новолуние 2001 года
-    
-    const diffDays = (date - baseDate) / (1000 * 60 * 60 * 24);
-    const age = diffDays % synodicMonth;
-    
+    // Алгоритм расчета лунной фазы (упрощенная модель)
+    const synodicMonth = 29.53058867;
+    const baseDate = new Date(2001, 0, 6, 18, 14); // Эталонное новолуние
+
+    const diff = date - baseDate;
+    const age = (diff / (1000 * 60 * 60 * 24)) % synodicMonth;
+
     if (age < 1) return 'Новолуние';
     if (age < synodicMonth / 8) return 'Растущий серп';
     if (age < synodicMonth / 4) return 'Первая четверть';
     if (age < synodicMonth / 2) return 'Растущая луна';
     if (age < synodicMonth * 3 / 4) return 'Полнолуние';
-    if (age < synodicMonth * 7 / 8) return 'Убывающая луна';
-    if (age < synodicMonth) return 'Последняя четверть';
-    
-    return 'Новолуние';
+
+    return 'Убывающая луна';
 }
 
-// Функция обновления информации о луне и месяце
 function updateMoonInfo() {
     const now = new Date();
-    const monthNames = [
+    
+    const months = [
         'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
         'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
     ];
     
-    document.getElementById('current-month').textContent = monthNames[now.getMonth()];
-    document.getElementById('moon-phase').textContent = getMoonPhase(now);
-}
-
-// Функция добавления фазы цикла в текущий день (по модулю 28)
-function addCycleDay() {
-    const select = document.getElementById('cycle-phase');
-    const phase = select.value;
+    document.getElementById('current-month').textContent = months[now.getMonth()];
     
-    // Определяем "текущий день" цикла (от 0 до 27)
-    const todayIndex = new Date().getDate() % 28 - 1;
+    // Находим ближайший день цикла к текущей дате
+    const todayIndex = now.getDate() % CYCLE_DAYS - 1;
     
-    cycleDays[todayIndex] = phase;
+    // Если сегодня отмечен в цикле, показываем его фазу
+    const currentPhase = cycleDays[todayIndex];
     
-    updateCycleChart();
-}
-
-// Функция обновления круговой диаграммы цикла
-function updateCycleChart() {
-    const ctx = document.getElementById('cycle-chart').getContext('2d');
+    let moonText = getMoonPhase(now);
     
-    // Подсчёт количества дней для каждой фазы
-    const counts = { menstruation: 0, follicular: 0, ovulation: 0, luteal: 0 };
-    cycleDays.forEach(day => {
-        if (day) counts[day]++;
-    });
-    
-    const data = {
-        labels: Object.keys(counts),
-        datasets: [{
-            data: Object.values(counts),
-            backgroundColor: Object.keys(counts).map(key => phaseColors[key]),
-            hoverOffset: 4
-        }]
-    };
-    
-    if (window.myChart) window.myChart.destroy();
-    
-    window.myChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: data,
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'right' } }
+    if (currentPhase) {
+        moonText += `\n(Сегодня день ${todayIndex + 1} цикла — ${PHASES[currentPhase].name})`;
+        document.getElementById('moon-phase').style.color = PHASES[currentPhase].color;
+        document.getElementById('moon-phase').style.fontWeight = 'bold';
+        document.getElementById('moon-phase').style.fontSize = '1.2rem';
+        document.getElementById('moon-phase').style.lineHeight = '1.4';
+        document.getElementById('moon-phase').style.whiteSpace = 'pre-wrap';
+        document.getElementById('moon-phase').style.textAlign = 'center';
+        document.getElementById('moon-phase').style.display = 'block'; // Для переноса строк
+        document.getElementById('moon-phase').style.width = '100%';
+        
+        // Прокручиваем к календарю, если это первый запуск и есть отметка на сегодня
+        if (!window.hasScrolledToCalendar && todayIndex >= 0 && currentPhase) {
+            window.hasScrolledToCalendar = true;
+            document.querySelector('.calendar').scrollIntoView({ behavior: 'smooth' });
         }
-    });
+        
+        // Прокручиваем к сводной диаграмме, если есть данные
+        if (!window.hasScrolledToSummary && Object.values(cycleDays).filter(v => v).length > 5) {
+            window.hasScrolledToSummary = true;
+            document.querySelector('.summary').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        
+        
+
+} else {
+        document.getElementById('moon-phase').style.color = '#333';
+        document.getElementById('moon-phase').style.fontWeight = 'normal';
+        document.getElementById('moon-phase').style.fontSize = '';
+        document.getElementById('moon-phase').style.lineHeight = '';
+        document.getElementById('moon-phase').style.whiteSpace = '';
+        document.getElementById('moon-phase').style.textAlign = '';
+        document.getElementById('moon-phase').style.display = '';
+        document.getElementById('moon-phase').style.width = '';
+     }
+
+     document.getElementById('moon-phase').textContent = moonText;
 }
 
-// Функция обновления интерактивного календаря (круг из 28 дней)
+
+// --- ФУНКЦИИ ГРАФИКОВ ---
+function destroyChart(chartRef) {
+   if (chartRef) {
+       chartRef.destroy();
+   }
+}
+
+function updateSummaryChart() {
+   const ctx = document.getElementById('summary-chart').getContext('2d');
+   destroyChart(summaryChart);
+   
+   const counts = { menstruation: 0, follicular: 0, ovulation: 0, luteal: 0 };
+   cycleDays.forEach(day => day && counts[day]++);
+   
+   summaryChart = new Chart(ctx, {
+       type: 'doughnut',
+       data: {
+           labels: Object.values(PHASES).map(p => p.name),
+           datasets: [{
+               data: [counts.menstruation, counts.follicular, counts.ovulation, counts.luteal],
+               backgroundColor: Object.values(PHASES).map(p => p.color),
+               hoverOffset: 8,
+               borderWidth: 2,
+               borderColor: '#fff'
+           }]
+       },
+       options: {
+           responsive: true,
+           maintainAspectRatio: false,
+           plugins: {
+               legend: { position: 'right' },
+               tooltip: { enabled: true }
+           }
+       }
+   });
+}
+
+
 function updateInteractiveCalendar() {
-    const ctx = document.getElementById('interactive-chart').getContext('2d');
-    
-    // Удаляем старую диаграмму, если есть
-    if (window.interactiveChart) window.interactiveChart.destroy();
-
-    // Создаём данные для круговой диаграммы с 28 секторами
-    const labels = Array.from({length: 28}, (_, i) => i + 1);
-    
-    window.interactiveChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: Array(28).fill(1), // Все сектора одинакового размера
-                backgroundColor: cycleDays.map(day => phaseColors[day] || phaseColors.none),
-                borderWidth: 1,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            rotation: -Math.PI / 2, // Начинаем с верхней точки
-            circumference: Math.PI * 2,
-            animation: { animateRotate: false }
-        }
-    });
-// Функция для безопасного удаления старой диаграммы
-function destroyChartIfExists(chartRef) {
-    if (chartRef) {
-        chartRef.destroy();
-    }
+   const ctx = document.getElementById('interactive-chart').getContext('2d');
+   destroyChart(interactiveChart);
+   
+   const labels = Array.from({length: CYCLE_DAYS}, (_, i) => i + 1);
+   
+   interactiveChart = new Chart(ctx, {
+       type: 'pie',
+       data: {
+           labels: labels,
+           datasets: [{
+               data: Array(CYCLE_DAYS).fill(1),
+               backgroundColor: cycleDays.map(day => day ? PHASES[day].color : '#ddd'),
+               borderWidth: 1,
+               borderColor: '#fff'
+           }]
+       },
+       options: {
+           responsive: true,
+           maintainAspectRatio: false,
+           rotation: -Math.PI / 2,
+           circumference: Math.PI * 2,
+           plugins: { legend: { display: false } },
+           animation: { animateRotate: false }
+       }
+   });
+   
+   // --- ОБРАБОТЧИК КЛИКА ПО ДНЯМ ---
+   ctx.canvas.addEventListener('click', function(evt) {
+       const activePoints = interactiveChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
+       
+       if (activePoints.length > 0) {
+           const dayIndex = activePoints[0].index; // Номер сектора (от 0 до CYCLE_DAYS-1)
+           
+           // Создаем меню выбора фазы прямо на странице для удобства
+           let menuHtml = `<div style="
+                position: fixed;
+                top: calc(50% - 150px);
+                left: calc(50% - 150px);
+                background:#fff;
+                padding:25px;
+                border-radius:15px;
+                box-shadow:0 15px 40px rgba(0,0,0,0.3);
+                z-index:9999;
+                width:300px;"
+            >
+                <h3 style="margin-top:-15px; margin-bottom:-15px; font-size:1.6rem;">День ${dayIndex + 1}</h3>
+                <p style="font-size:.9rem; color:#777;">Выберите текущую фазу:</p>
+                
+                <button onclick="setPhase( ${dayIndex}, 'menstruation')" 
+                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.menstruation.color}; color:#fff; font-weight:bolder; cursor:pointer;">
+                    ${PHASES.menstruation.name}
+                </button>
+                
+                <button onclick="setPhase( ${dayIndex}, 'follicular')" 
+                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.follicular.color}; color:#fff; font-weight:bolder; cursor:pointer;">
+                    ${PHASES.follicular.name}
+                </button>
+                
+                <button onclick="setPhase( ${dayIndex}, 'ovulation')" 
+                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.ovulation.color}; color:#fff; font-weight:bolder; cursor:pointer;">
+                    ${PHASES.ovulation.name}
+                </button>
+                
+                <button onclick="setPhase( ${dayIndex}, 'luteal')" 
+                        style="width:100%; padding:.8rem; margin-bottom:.7rem; border:none; border-radius:.5rem; background:${PHASES.luteal.color}; color:#fff; font-weight:bolder; cursor:pointer;">
+                    ${PHASES.luteal.name}
+                </button>
+                
+                <button onclick="setPhase( ${dayIndex}, null)" 
+                        style="width:100%; padding:.8rem; border:none; border-radius:.5rem; background:#ccc; color:#fff; font-weight:bolder; cursor:pointer;">Сбросить</button>
+                
+            </div>`;
+           
+           // Вставляем меню в body и убираем при клике вне его
+           const menuDiv = document.createElement('div');
+           menuDiv.innerHTML = menuHtml;
+           menuDiv.id = "phase-menu";
+           document.body.appendChild(menuDiv);
+           
+           // Закрытие меню при клике вне его границ
+           window.addEventListener('click', function closeMenu(e) {
+               if (!menuDiv.contains(e.target)) {
+                   menuDiv.remove();
+                   window.removeEventListener('click', closeMenu);
+               }
+           });
+       }
+   });
 }
 
-// Функция обновления круговой диаграммы цикла
-function updateCycleChart() {
-    const ctx = document.getElementById('cycle-chart').getContext('2d');
-    
-    const counts = { menstruation: 0, follicular: 0, ovulation: 0, luteal: 0 };
-    cycleDays.forEach(day => {
-        if (day) counts[day]++;
-    });
-    
-    const data = {
-        labels: Object.keys(counts),
-        datasets: [{
-            data: Object.values(counts),
-            backgroundColor: Object.keys(counts).map(key => phaseColors[key]),
-            hoverOffset: 4
-        }]
-    };
-    
-    // Безопасно удаляем старую диаграмму
-    destroyChartIfExists(window.myChart);
-    
-    window.myChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: data,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false, // Важно для фиксированной высоты
-            plugins: { legend: { position: 'right' } }
-        }
-    });
-}
 
-// Функция обновления интерактивного календаря (круг из 28 дней)
-function updateInteractiveCalendar() {
-    const ctx = document.getElementById('interactive-chart').getContext('2d');
-    
-    // Безопасно удаляем старую диаграмму
-    destroyChartIfExists(window.interactiveChart);
-
-    const labels = Array.from({length: 28}, (_, i) => i + 1);
-    
-    window.interactiveChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: Array(28).fill(1),
-                backgroundColor: cycleDays.map(day => phaseColors[day] || phaseColors.none),
-                borderWidth: 1,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false, // Важно для фиксированной высоты
-            plugins: { legend: { display: false } },
-            rotation: -Math.PI / 2,
-            circumference: Math.PI * 2,
-            animation: { animateRotate: false }
-        }
-    });
-}
-    // Добавляем обработчик клика по секторам
-    ctx.canvas.addEventListener('click', function(evt) {
-        const activePoints = window.interactiveChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
-        
-        if (activePoints.length > 0) {
-            const dayIndex = activePoints[0].index; // Индекс дня (0-27)
-            
-            // Покажем селектор для выбора фазы прямо на месте или через prompt
-            const selectedPhase = prompt(
-                "Выберите фазу для дня " + (dayIndex + 1) + ":\n" +
-                "menstruation - Менструация\n" +
-                "follicular - Фолликулярная фаза\n" +
-                "ovulation - Овуляция\n" +
-                "luteal - Лютеиновая фаза\n" +
-                "(или оставьте пустым для сброса)",
-                cycleDays[dayIndex] || ''
-            );
-            
-            if (selectedPhase === null) return; // Отмена
-
-            const validPhases = ['menstruation', 'follicular', 'ovulation', 'luteal'];
-            
-            if (validPhases.includes(selectedPhase)) {
-                cycleDays[dayIndex] = selectedPhase;
-                updateInteractiveCalendar(); // Обновим календарь
-                updateCycleChart();          // Обновим сводную диаграмму
-            } else if (selectedPhase === '') {
-                cycleDays[dayIndex] = null;
-                updateInteractiveCalendar();
-                updateCycleChart();
-            } else {
-                alert("Неверный ввод. Используйте только указанные значения.");
-            }
-        }
-    });
-}
-
-// Инициализация при загрузке страницы
-window.onload = function() {
-    updateMoonInfo();
-    
-    // Загрузка из localStorage, если есть сохранённые данные
-    const savedCycle = localStorage.getItem('cycleDays');
-    if (savedCycle) {
-        cycleDays = JSON.parse(savedCycle);
-        updateInteractiveCalendar();
-        updateCycleChart();
-        
-        // Если сегодня уже отмечен — выделим его в интерактивном календаре
-        const todayIndex = new Date().getDate() % 28 - 1;
-        if (cycleDays[todayIndex]) {
-            alert("Сегодня — день " + (todayIndex + 1) + " цикла. Фаза отмечена.");
-        }
-        
-        setTimeout(() => {
-          const el = document.querySelector('.interactive-calendar');
-          el.scrollIntoView({ behavior: 'smooth' });
-      }, 50);
-        
-      }
-};
-
-// Сохранение данных при закрытии/обновлении страницы
-window.addEventListener('beforeunload', () => {
+// --- ОСНОВНАЯ ЛОГИКА ---
+function setPhase(dayIndex, phase) {
+   cycleDays[dayIndex] = phase;
+   
+   // Обновляем оба графика сразу после изменения данных
+   updateInteractiveCalendar();
+   updateSummaryChart();
+   
+   // Убираем меню выбора фазы (оно вставляется в updateInteractiveCalendar)
+   const menu = document.getElementById("phase-menu");
+   if (menu) menu.remove();
+   
+   // Сохраняем данные в localStorage
    localStorage.setItem('cycleDays', JSON.stringify(cycleDays));
-});
+}
+
+
+// --- ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ ---
+window.onload = function() {
+   // Загрузка данных из памяти браузера
+   const savedData = localStorage.getItem('cycleDays');
+   if (savedData) {
+      cycleDays = JSON.parse(savedData);
+      updateMoonInfo(); // Обновим луну сразу с учетом данных цикла
+      updateInteractiveCalendar();
+      updateSummaryChart();
+      
+      // Прокрутка к календарю при загрузке, если есть данные за сегодня
+      setTimeout(() => {
+         const todayIndex = new Date().getDate() % CYCLE_DAYS - 1;
+         if (todayIndex >= 0 && cycleDays[todayIndex]) {
+            document.querySelector('.calendar').scrollIntoView({ behavior:'smooth' });
+         }
+      }, 5);
+      
+      
+      
+      
+  
+} else {
+      // Если данных нет, просто обновляем луну и создаем пустые графики
+      updateMoonInfo();
+      updateInteractiveCalendar();
+      updateSummaryChart();
+   }
+};
