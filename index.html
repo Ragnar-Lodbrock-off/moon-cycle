@@ -18,7 +18,8 @@
 
         <div class="calendar-container">
             <h2>Круговой лунный календарь (28 дней)</h2>
-            <canvas id="circular-calendar" width="400" height="400"> </canvas>
+            <canvas id="circular-calendar" width="400" height="400" const canvas = document.getElementById('myCanvas'); const ctx = canvas.getContext('2d');> </canvas>
+            
             
             <div class="legend">
                 <div><span class="legend-color" style="background-color: #ff6b6b;"></span> Менструация</div>
@@ -35,7 +36,6 @@
                 <option value="follicular">Фолликулярная фаза</option>
                 <option value="ovulation">Овуляция</option>
                 <option value="luteal">Лютеиновая фаза</option>
-                <option value="none">Нет фазы</option>
             </select>
             <button id="save-phase">Сохранить</button>
         </div>
